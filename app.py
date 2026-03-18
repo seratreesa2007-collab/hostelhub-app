@@ -25,18 +25,57 @@ if not os.path.exists("complaints.csv"):
 
 # HOME PAGE
 if menu == "Home":
-    st.header("Welcome to HostelHub")
+    if menu == "Home":
 
-    st.write(
-        "HostelHub helps students find PG and hostel accommodations easily. "
-        "Students can also submit complaints regarding maintenance."
-    )
+    # Background + Text Color
+    st.markdown("""
+    <style>
+    .stApp {
+        background: linear-gradient(to right, #1e3c72, #2a5298);
+        color: white;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-    st.subheader("Features")
-    st.write("🔍 View available PGs and Hostels")
-    st.write("📝 Submit complaints")
-    st.write("⚡Simple and easy to use")
+    # Title
+    st.markdown("<h1 style='text-align: center; color: #FFD700;'>🏠 HostelHub</h1>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center;'>Smart PG & Hostel Finder</h3>", unsafe_allow_html=True)
 
+    st.write("")
+
+    # Welcome Box
+    st.markdown("""
+    <div style='background-color: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; text-align: center;'>
+    <h3>Welcome to HostelHub</h3>
+    <p>This platform helps students find PG and hostel accommodation easily. 
+    You can also submit complaints regarding maintenance issues.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.write("")
+
+    # Features Section
+    st.markdown("### 🌟 Features")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("""
+        - 🔍 View available PGs and Hostels  
+        - 📍 Search by location  
+        """)
+
+    with col2:
+        st.markdown("""
+        - 📝 Submit complaints  
+        - ⚡ Simple and easy to use  
+        """)
+
+    st.write("")
+
+    # Footer
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center;'>Made with ❤️ for students</p>", unsafe_allow_html=True)
 
 # VIEW HOSTELS
 elif menu == "View PG/Hostels":
