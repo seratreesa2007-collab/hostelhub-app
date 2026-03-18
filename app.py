@@ -25,7 +25,6 @@ if not os.path.exists("complaints.csv"):
 
 # HOME PAGE
 if menu == "Home":
-    if menu == "Home":
 
     # Background + Text Color
     st.markdown("""
@@ -76,6 +75,9 @@ if menu == "Home":
     # Footer
     st.markdown("<hr>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center;'>Made with ❤️ for students</p>", unsafe_allow_html=True)
+
+   
+    
 
 # VIEW HOSTELS
 elif menu == "View PG/Hostels":
