@@ -5,13 +5,14 @@ import os
 st.title("🏠 HostelHub - Smart PG & Hostel Finder")
 
 # Role selection
+role = st.selectbox("Login As", ["Student", "Owner"])
 role = st.sidebar.selectbox("Login As", ["Student", "Owner"])
 
 # Menu based on role
 if role == "Student":
     menu = st.sidebar.selectbox("Menu", ["Home", "View PG/Hostels", "Submit Complaint"])
 else:
-    menu = st.sidebar.selectbox("Menu", ["Home", "Add PG/Hostel", "View Complaints", "View Searches"])
+    menu = st.sidebar.selectbox("Menu", ["Home", "Add PG/Hostel", "View Complaints", "View Contacts"])
 
 # Create files if they don't exist
 if not os.path.exists("hostels.csv"):
@@ -80,28 +81,34 @@ if menu == "Home":
     
 
 # VIEW HOSTELS
-elif menu == "View PG/Hostels":
-    st.header("Available PG/Hostels")
 
-    search = st.text_input("Search Hostel or Location")
+  elif menu == "View PG/Hostels":
+      elif menu == "View Contacts":
+    st.header("Student Contacts")
+
+    owner_name = st.text_input("Enter your name")
+
+    data = pd.read_csv("contact_log.csv", names=["Hostel","Owner"])
+
+    filtered = data[data["Owner"] == owner_name]
+
+    st.dataframe(filtered)
+    st.header("Available Hostels")
 
     data = pd.read_csv("hostels.csv")
 
-    if search:
-        filtered = data[
-            data["Name"].str.contains(search, case=False) |
-            data["Location"].str.contains(search, case=False)
-        ]
+    for i, row in data.iterrows():
+        st.write(f"🏠 {row['Name']} - {row['Location']} - ₹{row['Rent']}")
 
-        st.dataframe(filtered)
+        if st.button(f"Contact Owner {i}"):
+            log = pd.DataFrame({
+                "Hostel":[row["Name"]],
+                "Owner":[row["Owner"]]
+            })
+            log.to_csv("contact_log.csv", mode="a", header=False, index=False)
 
-        # Save search
-        log = pd.DataFrame({"Search":[search]})
-        log.to_csv("search_log.csv", mode="a", header=False, index=False)
-
-    else:
-        st.dataframe(data)
-
+            st.success("Owner contact recorded") 
+  
 
 # ADD HOSTEL
 elif menu == "Add PG/Hostel":
@@ -132,33 +139,33 @@ elif menu == "Add PG/Hostel":
 elif menu == "Submit Complaint":
     st.header("Submit Complaint")
 
-    student_name = st.text_input("Your Name")
-    hostel_name = st.text_input("Hostel Name")
+    student = st.text_input("Student Name")
+    hostel = st.text_input("Hostel Name")
+    owner = st.text_input("Owner Name")  # NEW
     complaint = st.text_area("Complaint")
 
-    if st.button("Submit Complaint"):
-
-        new_complaint = pd.DataFrame({
-            "Name":[student_name],
-            "Hostel":[hostel_name],
+    if st.button("Submit"):
+        data = pd.DataFrame({
+            "Student":[student],
+            "Hostel":[hostel],
+            "Owner":[owner],
             "Complaint":[complaint]
         })
-
-        new_complaint.to_csv("complaints.csv", mode="a", header=False, index=False)
-
-        st.success("Complaint Submitted Successfully!")
+        data.to_csv("complaints.csv", mode="a", header=False, index=False)
+        st.success("Complaint submitted")
 
 
 # VIEW COMPLAINTS
 elif menu == "View Complaints":
     st.header("Complaints")
 
-    data = pd.read_csv("complaints.csv")
+    owner_name = st.text_input("Enter your name")
 
-    if data.empty:
-        st.warning("No complaints submitted yet.")
-    else:
-        st.dataframe(data)
+    data = pd.read_csv("complaints.csv", names=["Student","Hostel","Owner","Complaint"])
+
+    filtered = data[data["Owner"] == owner_name]
+
+    st.dataframe(filtered)
 elif menu == "View Searches":
     st.header("Student Search History")
 
@@ -168,3 +175,4 @@ elif menu == "View Searches":
         st.warning("No searches yet")
     else:
         st.dataframe(data)
+        
