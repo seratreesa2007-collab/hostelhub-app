@@ -1,158 +1,139 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="HostelHub", layout="centered")
+# ------------------- FILE SETUP -------------------
+try:
+    hostels = pd.read_csv("hostels.csv")
+except:
+    hostels = pd.DataFrame(columns=["Name", "Location", "Rent", "Contact"])
 
-# 🎨 LIGHT THEME
-st.markdown("""
-    <style>
-    .stApp {
-        background: linear-gradient(to right, #f8ffae, #43c6ac);
-    }
-    </style>
-""", unsafe_allow_html=True)
+try:
+    complaints = pd.read_csv("complaints.csv")
+except:
+    complaints = pd.DataFrame(columns=["Student", "Hostel", "Complaint"])
 
-# ---------------- ROLE ----------------
-role = st.selectbox("Login As", ["Student", "Owner"])
+try:
+    search_log = pd.read_csv("search_log.csv")
+except:
+    search_log = pd.DataFrame(columns=["Search"])
 
-# ---------------- MENU ----------------
-if role == "Student":
-    menu = st.sidebar.selectbox("Menu", ["Home", "View Hostels", "Submit Complaint"])
-else:
-    menu = st.sidebar.selectbox("Menu", ["Home", "Add Hostel", "View Complaints", "View Contacts"])
+try:
+    contact_log = pd.read_csv("contact_log.csv")
+except:
+    contact_log = pd.DataFrame(columns=["Hostel", "Contacted_By"])
 
+# ------------------- TITLE -------------------
+st.title("🏠 HostelHub")
 
-# ---------------- HOME ----------------
+# ------------------- LOGIN TYPE -------------------
+role = st.sidebar.selectbox("Login As", ["Student", "Owner"])
+
+menu = st.sidebar.selectbox("Menu",
+    ["Home", "View PG/Hostels"] +
+    (["Submit Complaint"] if role == "Student" else []) +
+    (["Add Hostel", "View Complaints", "View Searches", "Contact Logs"] if role == "Owner" else [])
+)
+
+# ------------------- HOME -------------------
 if menu == "Home":
+    st.subheader("Welcome to HostelHub")
+    st.write("Find PGs and hostels easily.")
 
-    st.markdown("<h1 style='text-align:center;'>🏠 HostelHub</h1>", unsafe_allow_html=True)
-    st.markdown("<h4 style='text-align:center;'>Smart PG & Hostel Finder</h4>", unsafe_allow_html=True)
+# ------------------- VIEW HOSTELS -------------------
+elif menu == "View PG/Hostels":
+    st.subheader("Available Hostels")
 
-    st.markdown("""
-    <div style='background-color:white; padding:20px; border-radius:10px;'>
-    <h3>Welcome</h3>
-    <p>This platform helps students find hostels and connect with owners easily.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    search = st.text_input("Search by name or location")
 
-    st.write("")
+    if search:
+        filtered = hostels[
+            hostels["Name"].str.contains(search, case=False) |
+            hostels["Location"].str.contains(search, case=False)
+        ]
+        st.dataframe(filtered)
 
-    st.markdown("### 🌟 Features")
-    st.write("✔ View hostels")
-    st.write("✔ Submit complaints (only visible to owner)")
-    st.write("✔ Contact owner tracking (for commission)")
+        # Save search
+        pd.DataFrame({"Search": [search]}).to_csv("search_log.csv", mode="a", header=False, index=False)
 
-    st.write("")
+    else:
+        st.dataframe(hostels)
 
-    # 🧠 EXPLANATION BOX (YOUR DOUBT SOLUTION)
-    st.markdown("""
-    <div style='background-color:#ffffff; padding:15px; border-radius:10px;'>
-    <h4>System Improvements</h4>
-    <ul>
-    <li>Role-based access (Student / Owner)</li>
-    <li>Complaints are visible only to respective owners</li>
-    <li>Contact tracking helps identify student-owner interaction</li>
-    </ul>
-    </div>
-    """, unsafe_allow_html=True)
+    # Contact owner (important for commission idea)
+    if not hostels.empty:
+        hostel_name = st.selectbox("Select Hostel to Contact", hostels["Name"])
 
+        if st.button("📞 Contact Owner"):
+            pd.DataFrame({
+                "Hostel": [hostel_name],
+                "Contacted_By": ["Student"]
+            }).to_csv("contact_log.csv", mode="a", header=False, index=False)
 
-# ---------------- ADD HOSTEL ----------------
+            st.success("Owner contacted! (Tracked)")
+
+# ------------------- ADD HOSTEL (OWNER) -------------------
 elif menu == "Add Hostel":
-    st.header("Add Hostel")
+    st.subheader("Add Hostel")
 
     name = st.text_input("Hostel Name")
     location = st.text_input("Location")
     rent = st.text_input("Rent")
-    owner = st.text_input("Owner Name")
+    contact = st.text_input("Contact")
 
     if st.button("Add Hostel"):
-        data = pd.DataFrame({
-            "Name":[name],
-            "Location":[location],
-            "Rent":[rent],
-            "Owner":[owner]
+        new_data = pd.DataFrame({
+            "Name": [name],
+            "Location": [location],
+            "Rent": [rent],
+            "Contact": [contact]
         })
-        data.to_csv("hostels.csv", mode="a", header=False, index=False)
-        st.success("Hostel Added Successfully")
 
+        new_data.to_csv("hostels.csv", mode="a", header=False, index=False)
+        st.success("Hostel added successfully!")
 
-# ---------------- VIEW HOSTELS ----------------
-elif menu == "View Hostels":
-    st.header("Available Hostels")
-
-    try:
-        data = pd.read_csv("hostels.csv", names=["Name","Location","Rent","Owner"])
-
-        for i, row in data.iterrows():
-            st.markdown(f"""
-            <div style='background-color:white; padding:10px; border-radius:10px; margin-bottom:10px;'>
-            <b>{row['Name']}</b><br>
-            📍 {row['Location']}<br>
-            💰 ₹{row['Rent']}
-            </div>
-            """, unsafe_allow_html=True)
-
-            if st.button(f"Contact Owner {i}"):
-                log = pd.DataFrame({
-                    "Hostel":[row["Name"]],
-                    "Owner":[row["Owner"]]
-                })
-                log.to_csv("contact_log.csv", mode="a", header=False, index=False)
-
-                st.success("Owner contact recorded (used for commission)")
-
-    except:
-        st.warning("No hostels available")
-
-
-# ---------------- SUBMIT COMPLAINT ----------------
+# ------------------- SUBMIT COMPLAINT (STUDENT) -------------------
 elif menu == "Submit Complaint":
-    st.header("Submit Complaint")
+    st.subheader("Submit Complaint")
 
-    student = st.text_input("Student Name")
+    student = st.text_input("Your Name")
     hostel = st.text_input("Hostel Name")
-    owner = st.text_input("Owner Name")
     complaint = st.text_area("Complaint")
 
     if st.button("Submit"):
-        data = pd.DataFrame({
-            "Student":[student],
-            "Hostel":[hostel],
-            "Owner":[owner],
-            "Complaint":[complaint]
+        new_data = pd.DataFrame({
+            "Student": [student],
+            "Hostel": [hostel],
+            "Complaint": [complaint]
         })
-        data.to_csv("complaints.csv", mode="a", header=False, index=False)
-        st.success("Complaint submitted successfully")
 
+        new_data.to_csv("complaints.csv", mode="a", header=False, index=False)
+        st.success("Complaint submitted!")
 
-# ---------------- VIEW COMPLAINTS ----------------
+# ------------------- VIEW COMPLAINTS (OWNER) -------------------
 elif menu == "View Complaints":
-    st.header("View Complaints")
-
-    owner_name = st.text_input("Enter your name")
+    st.subheader("All Complaints")
 
     try:
-        data = pd.read_csv("complaints.csv", names=["Student","Hostel","Owner","Complaint"])
-        filtered = data[data["Owner"] == owner_name]
-
-        st.dataframe(filtered)
-
+        data = pd.read_csv("complaints.csv")
+        st.dataframe(data)
     except:
-        st.warning("No complaints found")
+        st.warning("No complaints yet")
 
-
-# ---------------- VIEW CONTACTS ----------------
-elif menu == "View Contacts":
-    st.header("Student Contacts")
-
-    owner_name = st.text_input("Enter your name")
+# ------------------- VIEW SEARCHES -------------------
+elif menu == "View Searches":
+    st.subheader("Search History")
 
     try:
-        data = pd.read_csv("contact_log.csv", names=["Hostel","Owner"])
-        filtered = data[data["Owner"] == owner_name]
-
-        st.dataframe(filtered)
-
+        data = pd.read_csv("search_log.csv")
+        st.dataframe(data)
     except:
-        st.warning("No contact data available")
+        st.warning("No searches yet")
+
+# ------------------- CONTACT LOG (IMPORTANT) -------------------
+elif menu == "Contact Logs":
+    st.subheader("Student Contact Logs")
+
+    try:
+        data = pd.read_csv("contact_log.csv")
+        st.dataframe(data)
+    except:
+        st.warning("No contacts yet")
